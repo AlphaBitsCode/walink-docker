@@ -1,0 +1,69 @@
+name: walink-docker
+services:
+    walink:
+        build:
+            context: ./
+            dockerfile: ./Dockerfile
+        cpu_shares: 90
+        container_name: walink-docker
+        deploy:
+            resources:
+                limits:
+                    memory: "2048m"
+        environment:
+            TZ: Pacific/Apia
+            # Puppeteer configuration
+            PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+            PUPPETEER_EXECUTABLE_PATH: "/usr/bin/chromium-browser"
+            # MQTT configuration
+            MQTT_ENABLE: "true"
+            MQTT_BROKER_URL: "mqtt://dev.konductor.ai:2883"
+            MQTT_USERNAME: "walink"
+            MQTT_PASSWORD: "alphabits.team"
+            MQTT_CLIENT_ID: "walink-docker-001"
+            MQTT_INCOMING_TOPIC: "wa/001/in"
+            MQTT_OUTGOING_TOPIC: "wa/001/out"
+        hostname: walink
+        image: walink-docker:latest
+        labels:
+            casaos.category: Development
+            casaos.description: "WhatsApp Web.js Bot"
+            casaos.hostname: ""
+            casaos.icon: https://raw.githubusercontent.com/pedroslopez/whatsapp-web.js/main/docs/assets/wwebjs.png
+            casaos.name: WhatsApp Link
+            casaos.path: ""
+            casaos.port_map: ""
+            casaos.scheme: http
+            icon: https://raw.githubusercontent.com/pedroslopez/whatsapp-web.js/main/docs/assets/wwebjs.png
+        network_mode: bridge
+        restart: unless-stopped
+        volumes:
+            - type: bind
+              source: ./data/auth
+              target: /usr/src/app/.wwebjs_auth
+              bind:
+                create_host_path: true
+            - type: bind
+              source: ./data/cache
+              target: /usr/src/app/.wwebjs_cache
+              bind:
+                create_host_path: true
+        # Add security options for running Chromium in container
+        security_opt:
+            - seccomp:unconfined
+        # Add shared memory size for Chromium
+        shm_size: 2gb
+networks:
+    default:
+        name: walink-docker_default
+x-casaos:
+    author: self
+    category: self
+    hostname: ""
+    icon: https://raw.githubusercontent.com/pedroslopez/whatsapp-web.js/main/docs/assets/wwebjs.png
+    index: /
+    is_uncontrolled: false
+    port_map: ""
+    scheme: http
+    title:
+        custom: WhatsApp Link - 001

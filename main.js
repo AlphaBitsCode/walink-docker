@@ -1,4 +1,113 @@
 const { Client, Location, Poll, List, Buttons, LocalAuth } = require('./index');
+const mqtt = require('mqtt');
+require('dotenv').config();
+
+// MQTT Configuration
+const MQTT_ENABLE = process.env.MQTT_ENABLE === 'true';
+const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
+const MQTT_USERNAME = process.env.MQTT_USERNAME;
+const MQTT_PASSWORD = process.env.MQTT_PASSWORD;
+const MQTT_CLIENT_ID = process.env.MQTT_CLIENT_ID || 'whatsapp-web-client';
+const MQTT_INCOMING_TOPIC = process.env.MQTT_INCOMING_TOPIC || 'whatsapp/incoming';
+const MQTT_OUTGOING_TOPIC = process.env.MQTT_OUTGOING_TOPIC || 'whatsapp/outgoing';
+
+// Helper function to publish events to MQTT
+function publishEventToMQTT(eventType, eventData) {
+    if (MQTT_ENABLE && mqttClient && mqttClient.connected) {
+        const payload = {
+            eventType: eventType,
+            timestamp: new Date().toISOString(),
+            data: eventData
+        };
+        
+        const mqttPayload = JSON.stringify(payload);
+        console.log(`MQTT: Publishing ${eventType} event to ${MQTT_INCOMING_TOPIC}:`, {
+            eventType: eventType,
+            payloadSize: mqttPayload.length
+        });
+        
+        mqttClient.publish(MQTT_INCOMING_TOPIC, mqttPayload, { qos: 1 }, (err) => {
+            if (err) {
+                console.error(`MQTT: Failed to publish ${eventType} event:`, err);
+            } else {
+                console.log(`MQTT: Successfully published ${eventType} event`, {
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+    }
+}
+
+// Initialize MQTT client
+let mqttClient = null;
+if (MQTT_ENABLE) {
+    const mqttOptions = {
+        clientId: MQTT_CLIENT_ID,
+        clean: true,
+        connectTimeout: 4000,
+        reconnectPeriod: 1000,
+    };
+    
+    if (MQTT_USERNAME && MQTT_PASSWORD) {
+        mqttOptions.username = MQTT_USERNAME;
+        mqttOptions.password = MQTT_PASSWORD;
+    }
+    
+    mqttClient = mqtt.connect(MQTT_BROKER_URL, mqttOptions);
+    
+    mqttClient.on('connect', () => {
+        console.log('MQTT: Connected to broker');
+        // Subscribe to outgoing topic for messages to send via WhatsApp
+        mqttClient.subscribe(MQTT_OUTGOING_TOPIC, (err) => {
+            if (err) {
+                console.error('MQTT: Failed to subscribe to outgoing topic:', err);
+            } else {
+                console.log(`MQTT: Subscribed to ${MQTT_OUTGOING_TOPIC}`);
+            }
+        });
+    });
+    
+    mqttClient.on('error', (err) => {
+        console.error('MQTT: Connection error:', err);
+    });
+    
+    mqttClient.on('offline', () => {
+        console.log('MQTT: Client offline');
+    });
+    
+    mqttClient.on('reconnect', () => {
+        console.log('MQTT: Reconnecting...');
+    });
+    
+    // Handle incoming MQTT messages for outgoing WhatsApp messages
+    mqttClient.on('message', async (topic, message) => {
+        if (topic === MQTT_OUTGOING_TOPIC) {
+            try {
+                const messageData = JSON.parse(message.toString());
+                console.log('MQTT: Received outgoing message:', messageData);
+                
+                // Validate required fields
+                if (!messageData.to || !messageData.body) {
+                    console.error('MQTT: Invalid message format - missing to or body field');
+                    return;
+                }
+                
+                // Wait for WhatsApp client to be ready
+                if (!client.info) {
+                    console.error('MQTT: WhatsApp client not ready yet');
+                    return;
+                }
+                
+                // Send message via WhatsApp
+                await client.sendMessage(messageData.to, messageData.body, messageData.options || {});
+                console.log(`MQTT: Sent WhatsApp message to ${messageData.to}`);
+                
+            } catch (error) {
+                console.error('MQTT: Error processing outgoing message:', error);
+            }
+        }
+    });
+}
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -15,8 +124,19 @@ const client = new Client({
      */
     // browserName: 'Firefox',
     puppeteer: { 
-        // args: ['--proxy-server=proxy-server-that-requires-authentication.example.com'],
-        headless: false,
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding'
+        ],
     },
     // pairWithPhoneNumber: {
     //     phoneNumber: '96170100100' // Pair with phone number (format: <COUNTRY_CODE><PHONE_NUMBER>)
@@ -66,6 +186,43 @@ client.on('ready', async () => {
 
 client.on('message', async msg => {
     console.log('MESSAGE RECEIVED', msg);
+    
+    // Forward message to MQTT if enabled
+    if (MQTT_ENABLE && mqttClient && mqttClient.connected) {
+        const messageData = {
+            id: msg.id._serialized,
+            from: msg.from,
+            to: msg.to,
+            body: msg.body,
+            type: msg.type,
+            timestamp: msg.timestamp,
+            fromMe: msg.fromMe,
+            hasMedia: msg.hasMedia,
+            isGroup: msg.from.endsWith('@g.us'),
+            author: msg.author || null,
+            deviceType: msg.deviceType || null
+        };
+        
+        const mqttPayload = JSON.stringify(messageData);
+        console.log(`MQTT: Preparing to send message to ${MQTT_INCOMING_TOPIC}:`, {
+            messageId: messageData.id,
+            from: messageData.from,
+            bodyLength: messageData.body.length,
+            type: messageData.type,
+            payloadSize: mqttPayload.length
+        });
+        
+        mqttClient.publish(MQTT_INCOMING_TOPIC, mqttPayload, { qos: 1 }, (err) => {
+            if (err) {
+                console.error('MQTT: Failed to publish message:', err);
+            } else {
+                console.log(`MQTT: Successfully published message to ${MQTT_INCOMING_TOPIC}`, {
+                    messageId: messageData.id,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+    }
 
     if (msg.body === '!ping reply') {
         // Send a new message as a reply to the current one
@@ -574,22 +731,54 @@ client.on('message_ack', (msg, ack) => {
 client.on('group_join', (notification) => {
     // User has joined or been added to the group.
     console.log('join', notification);
+    
+    // Forward to MQTT
+    publishEventToMQTT('group_join', {
+        chatId: notification.chatId,
+        author: notification.author,
+        recipientIds: notification.recipientIds,
+        timestamp: notification.timestamp
+    });
+    
     notification.reply('User joined.');
 });
 
 client.on('group_leave', (notification) => {
     // User has left or been kicked from the group.
     console.log('leave', notification);
+    
+    // Forward to MQTT
+    publishEventToMQTT('group_leave', {
+        chatId: notification.chatId,
+        author: notification.author,
+        recipientIds: notification.recipientIds,
+        timestamp: notification.timestamp
+    });
+    
     notification.reply('User left.');
 });
 
 client.on('group_update', (notification) => {
     // Group picture, subject or description has been updated.
     console.log('update', notification);
+    
+    // Forward to MQTT
+    publishEventToMQTT('group_update', {
+        chatId: notification.chatId,
+        author: notification.author,
+        type: notification.type,
+        timestamp: notification.timestamp
+    });
 });
 
 client.on('change_state', state => {
     console.log('CHANGE STATE', state);
+    
+    // Forward to MQTT
+    publishEventToMQTT('change_state', {
+        state: state,
+        timestamp: new Date().getTime()
+    });
 });
 
 // Change to false if you don't want to reject incoming calls
@@ -597,12 +786,28 @@ let rejectCalls = true;
 
 client.on('call', async (call) => {
     console.log('Call received, rejecting. GOTO Line 261 to disable', call);
+    
+    // Forward to MQTT
+    publishEventToMQTT('call', {
+        from: call.from,
+        fromMe: call.fromMe,
+        isGroup: call.isGroup,
+        isVideo: call.isVideo,
+        timestamp: new Date().getTime()
+    });
+    
     if (rejectCalls) await call.reject();
     await client.sendMessage(call.from, `[${call.fromMe ? 'Outgoing' : 'Incoming'}] Phone call from ${call.from}, type ${call.isGroup ? 'group' : ''} ${call.isVideo ? 'video' : 'audio'} call. ${rejectCalls ? 'This call was automatically rejected by the script.' : ''}`);
 });
 
 client.on('disconnected', (reason) => {
     console.log('Client was logged out', reason);
+    
+    // Forward to MQTT
+    publishEventToMQTT('disconnected', {
+        reason: reason,
+        timestamp: new Date().getTime()
+    });
 });
 
 client.on('contact_changed', async (message, oldId, newId, isContact) => {
@@ -652,6 +857,14 @@ client.on('group_admin_changed', (notification) => {
     } else if (notification.type === 'demote')
         /** Emitted when a current user is demoted to a regular user. */
         console.log(`You were demoted by ${notification.author}`);
+    
+    // Forward to MQTT
+    publishEventToMQTT('group_admin_changed', {
+        chatId: notification.chatId,
+        author: notification.author,
+        type: notification.type,
+        timestamp: notification.timestamp
+    });
 });
 
 client.on('group_membership_request', async (notification) => {
@@ -682,6 +895,14 @@ client.on('group_membership_request', async (notification) => {
 
 client.on('message_reaction', async (reaction) => {
     console.log('REACTION RECEIVED', reaction);
+    
+    // Forward to MQTT
+    publishEventToMQTT('message_reaction', {
+        messageId: reaction.msgId._serialized,
+        senderId: reaction.senderId,
+        reaction: reaction.reaction,
+        timestamp: reaction.timestamp
+    });
 });
 
 client.on('vote_update', (vote) => {
