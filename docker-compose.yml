@@ -16,7 +16,7 @@ services:
             PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
             PUPPETEER_EXECUTABLE_PATH: "/usr/bin/chromium-browser"
             # WhatsApp Client configuration
-            DEVICE_NAME: "WALink Docker 001"
+            DEVICE_NAME: "Personal PC"
             BROWSER_NAME: "Chrome"
             # PROXY_USERNAME: "proxy_user"
             # PROXY_PASSWORD: "proxy_pass"
