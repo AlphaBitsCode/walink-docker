@@ -5,11 +5,11 @@ services:
             context: ./
             dockerfile: ./Dockerfile
         cpu_shares: 90
-        container_name: walink-docker
+        container_name: walink-docker-001
         deploy:
             resources:
                 limits:
-                    memory: "2048m"
+                    memory: "1024m"
         environment:
             TZ: Pacific/Apia
             # Puppeteer configuration
@@ -27,10 +27,10 @@ services:
         image: walink-docker:latest
         labels:
             casaos.category: Development
-            casaos.description: "WhatsApp Web.js Bot"
+            casaos.description: "WhatsApp Link in Docker"
             casaos.hostname: ""
             casaos.icon: https://raw.githubusercontent.com/pedroslopez/whatsapp-web.js/main/docs/assets/wwebjs.png
-            casaos.name: WhatsApp Link
+            casaos.name: WhatsApp Link 001
             casaos.path: ""
             casaos.port_map: ""
             casaos.scheme: http
