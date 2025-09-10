@@ -15,6 +15,11 @@ services:
             # Puppeteer configuration
             PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
             PUPPETEER_EXECUTABLE_PATH: "/usr/bin/chromium-browser"
+            # WhatsApp Client configuration
+            DEVICE_NAME: "WALink Docker 001"
+            BROWSER_NAME: "Chrome"
+            # PROXY_USERNAME: "proxy_user"
+            # PROXY_PASSWORD: "proxy_pass"
             # MQTT configuration
             MQTT_ENABLE: "true"
             MQTT_BROKER_URL: "mqtt://dev.konductor.ai:2883"

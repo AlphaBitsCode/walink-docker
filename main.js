@@ -11,6 +11,54 @@ const MQTT_CLIENT_ID = process.env.MQTT_CLIENT_ID || 'whatsapp-web-client';
 const MQTT_INCOMING_TOPIC = process.env.MQTT_INCOMING_TOPIC || 'whatsapp/incoming';
 const MQTT_OUTGOING_TOPIC = process.env.MQTT_OUTGOING_TOPIC || 'whatsapp/outgoing';
 
+// Helper function to display QR code in terminal and return both QR string and base64 PNG
+async function convertQRToImageURL(qrString) {
+    // Sample qr:
+    /*
+    "qr": "2@POqmnYJVtG0JaEp9idkzmHKRX+trJJv9VO0dd55mG7hZTkjDjBtHEN/SBM0SpgIayopn1WOehbm6SHG/1VbNHuG+PdiauLwXKyc=,njNcnyg32kDPcWwukQcFesMf6Kx64khB+RiggZJUhWY=,jJ0vLfOwvCvzbG/XPWcyYkWzDDSDYia6hdn1e9r9iB8=,alG0BfFZxXq8qP10AmYG/jJ8VhUnLJWUVwl9bV/j1Zo=,1",
+    }*/
+    
+    // Validate input
+    if (!qrString || typeof qrString !== 'string') {
+        console.error('Invalid QR string provided');
+        return { qrString: null, qrImageURL: null };
+    }
+    
+    try {
+        const qrcodeTerminal = require('qrcode-terminal');
+        const QRCode = require('qrcode');
+        
+        // Display QR code in terminal
+        qrcodeTerminal.generate(qrString, { small: true });
+        
+        // Generate base64 PNG image URL
+        const qrImageURL = await QRCode.toDataURL(qrString, {
+            type: 'image/png',
+            width: 256,
+            margin: 2,
+            color: {
+                dark: '#000080',
+                light: '#FFFFFF'
+            }
+        });
+        
+        // Get QR string representation using callback
+        const qrStringRepresentation = await new Promise((resolve) => {
+            qrcodeTerminal.generate(qrString, { small: true }, function (qrcodeString) {
+                resolve(qrcodeString);
+            });
+        });
+        
+        return {
+            qrString: qrStringRepresentation,
+            qrImageURL: qrImageURL
+        };
+    } catch (error) {
+        console.error('Error generating QR code:', error);
+        return { qrString: null, qrImageURL: null };
+    }
+}
+
 // Helper function to publish events to MQTT
 function publishEventToMQTT(eventType, eventData) {
     if (MQTT_ENABLE && mqttClient && mqttClient.connected) {
@@ -109,20 +157,15 @@ if (MQTT_ENABLE) {
     });
 }
 
-const client = new Client({
+// WhatsApp Client Configuration
+const DEVICE_NAME = process.env.DEVICE_NAME;
+const BROWSER_NAME = process.env.BROWSER_NAME;
+const PROXY_USERNAME = process.env.PROXY_USERNAME;
+const PROXY_PASSWORD = process.env.PROXY_PASSWORD;
+
+// Build client configuration
+const clientConfig = {
     authStrategy: new LocalAuth(),
-    // proxyAuthentication: { username: 'username', password: 'password' },
-    /**
-     * This option changes the browser name from defined in user agent to custom.
-     */
-    // deviceName: 'Your custom name',
-    /**
-     * This option changes browser type from defined in user agent to yours. It affects the browser icon
-     * that is displayed in 'linked devices' section.
-     * Valid value are: 'Chrome' | 'Firefox' | 'IE' | 'Opera' | 'Safari' | 'Edge'.
-     * If another value is provided, the browser icon in 'linked devices' section will be gray.
-     */
-    // browserName: 'Firefox',
     puppeteer: { 
         headless: true,
         args: [
@@ -143,31 +186,86 @@ const client = new Client({
     //     showNotification: true,
     //     intervalMs: 180000 // Time to renew pairing code in milliseconds, defaults to 3 minutes
     // }
-});
+};
+
+// Add device name if provided
+if (DEVICE_NAME) {
+    clientConfig.deviceName = DEVICE_NAME;
+}
+
+// Add browser name if provided (Chrome, Firefox, IE, Opera, Safari, Edge)
+if (BROWSER_NAME) {
+    clientConfig.browserName = BROWSER_NAME;
+}
+
+// Add proxy authentication if both username and password are provided
+if (PROXY_USERNAME && PROXY_PASSWORD) {
+    clientConfig.proxyAuthentication = {
+        username: PROXY_USERNAME,
+        password: PROXY_PASSWORD
+    };
+}
+
+const client = new Client(clientConfig);
 
 // client initialize does not finish at ready now.
 client.initialize();
 
 client.on('loading_screen', (percent, message) => {
     console.log('LOADING SCREEN', percent, message);
+    
+    // Forward to MQTT
+    publishEventToMQTT('loading_screen', {
+        percent: percent,
+        message: message,
+        timestamp: new Date().getTime()
+    });
 });
 
 client.on('qr', async (qr) => {
     // NOTE: This event will not be fired if a session is specified.
     console.log('QR RECEIVED', qr);
+    
+    // Convert QR string to both terminal display and base64 PNG image URL
+    const qrData = await convertQRToImageURL(qr);
+    
+    // Forward to MQTT
+    publishEventToMQTT('qr', {
+        qr: qr,
+        qrString: qrData.qrString,
+        qrImageURL: qrData.qrImageURL,
+        timestamp: new Date().getTime()
+    });
 });
 
 client.on('code', (code) => {
     console.log('Pairing code:',code);
+    
+    // Forward to MQTT
+    publishEventToMQTT('code', {
+        code: code,
+        timestamp: new Date().getTime()
+    });
 });
 
 client.on('authenticated', () => {
     console.log('AUTHENTICATED');
+    
+    // Forward to MQTT
+    publishEventToMQTT('authenticated', {
+        timestamp: new Date().getTime()
+    });
 });
 
 client.on('auth_failure', msg => {
     // Fired if session restore was unsuccessful
     console.error('AUTHENTICATION FAILURE', msg);
+    
+    // Forward to MQTT
+    publishEventToMQTT('auth_failure', {
+        message: msg,
+        timestamp: new Date().getTime()
+    });
 });
 
 client.on('ready', async () => {
