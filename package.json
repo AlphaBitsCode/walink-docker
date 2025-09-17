@@ -44,10 +44,10 @@
     "chai-as-promised": "^7.1.1",
     "eslint": "^8.4.1",
     "eslint-plugin-mocha": "^11.1.0",
-    "jsdoc": "^3.6.4",
+    "jsdoc": "^4.0.4",
     "jsdoc-baseline": "^0.1.5",
     "mocha": "^11.7.2",
-    "sinon": "^13.0.1"
+    "sinon": "^21.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
