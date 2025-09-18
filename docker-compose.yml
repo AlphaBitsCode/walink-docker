@@ -1,9 +1,7 @@
 name: walink-docker
 services:
     walink:
-        build:
-            context: ./
-            dockerfile: ./Dockerfile
+        image: kent000/whatsapp-mqtt:latest
         cpu_shares: 90
         container_name: walink-docker-001
         deploy:
@@ -29,7 +27,6 @@ services:
             MQTT_INCOMING_TOPIC: "wa/001/in"
             MQTT_OUTGOING_TOPIC: "wa/001/out"
         hostname: walink
-        image: walink-docker:latest
         labels:
             casaos.category: Development
             casaos.description: "WhatsApp Link in Docker"
