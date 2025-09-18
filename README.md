@@ -1,199 +1,206 @@
 <div align="center">
     <br />
     <p>
-        <a href="https://wwebjs.dev"><img src="https://github.com/wwebjs/logos/blob/main/4_Full%20Logo%20Lockup_Small/small_banner_blue.png?raw=true" title="whatsapp-web.js" alt="WWebJS Website" width="500" /></a>
+        <a href="https://alphabits.team"><img src="https://alphabits.team/logos/logo_header.png" title="Alpha Bits" alt="Alpha Bits Logo" width="300" /></a>
+    </p>
+    <br />
+    <h1>🚀 WhatsApp Link - Docker Edition</h1>
+    <p>
+        <i>Enterprise-Grade WhatsApp API Gateway by <strong>Alpha Bits</strong></i>
     </p>
     <br />
     <p>
-		<a href="https://www.npmjs.com/package/whatsapp-web.js"><img src="https://img.shields.io/npm/v/whatsapp-web.js.svg" alt="npm" /></a>
-        <a href="https://depfu.com/github/pedroslopez/whatsapp-web.js?project_id=9765"><img src="https://badges.depfu.com/badges/4a65a0de96ece65fdf39e294e0c8dcba/overview.svg" alt="Depfu" /></a>
-        <img src="https://img.shields.io/badge/WhatsApp_Web-2.3000.1026927524-brightgreen.svg" alt="WhatsApp_Web 2.2346.52" />
-        <a href="https://discord.gg/H7DqQs4"><img src="https://img.shields.io/discord/698610475432411196.svg?logo=discord" alt="Discord server" /></a>
-	</p>
+        <a href="https://hub.docker.com/r/alphabits/walink-docker"><img src="https://img.shields.io/docker/v/alphabits/walink-docker?sort=semver" alt="Docker Version"></a>
+        <img src="https://img.shields.io/badge/WhatsApp_Web-2.3000.1026927524-brightgreen.svg" alt="WhatsApp Version">
+        <a href="https://github.com/AlphaBitsCode/walink-docker"><img src="https://img.shields.io/github/stars/AlphaBitsCode/walink-docker?style=social" alt="GitHub Stars"></a>
+    </p>
     <br />
 </div>
 
-## WhatsApp Link - Docker
+## 🎯 Quick Start for DevOps Engineers
 
-A Dockerized version of the WhatsApp Web.js library for easy deployment and scaling.
-
-## About
-**A WhatsApp API client that connects through the WhatsApp Web browser app**
-
-The library works by launching the WhatsApp Web browser application and managing it using Puppeteer to create an instance of WhatsApp Web, thereby mitigating the risk of being blocked. The WhatsApp API client connects through the WhatsApp Web browser app, accessing its internal functions. This grants you access to nearly all the features available on WhatsApp Web, enabling dynamic handling similar to any other Node.js application.
-
-> [!IMPORTANT]
-> **It is not guaranteed you will not be blocked by using this method. WhatsApp does not allow bots or unofficial clients on their platform, so this shouldn't be considered totally safe.**
-
-## Links
-
-* [Website][website]
-* [Guide][guide] ([source][guide-source]) _(work in progress)_
-* [Documentation][documentation] ([source][documentation-source])
-* [WWebJS Discord][discord]
-* [GitHub][gitHub]
-* [npm][npm]
-
-## Installation
-
-The module is now available on npm! `npm i whatsapp-web.js`
-
-> [!NOTE]
-> **Node ``v18+`` is required.**
-
-## Docker Usage
-
-This repository provides a Dockerized version of the WhatsApp Web.js library:
-
+### Docker Deployment
 ```bash
-docker build -t walink-docker .
-docker run -it --rm walink-docker
+# Pull the image
+docker pull alphabits/walink-docker:latest
+
+# Run with default configuration
+docker run -d \
+  --name walink-gateway \
+  -p 3000:3000 \
+  alphabits/walink-docker:latest
 ```
 
-## QUICK STEPS TO UPGRADE NODE
-
-### Windows
-
-#### Manual
-Just get the latest LTS from the [official node website][nodejs].
-
-#### npm
-```powershell
-sudo npm install -g n
-sudo n stable
-```
-
-#### Choco
-```powershell
-choco install nodejs-lts
-```
-
-#### Winget
-```powershell
-winget install OpenJS.NodeJS.LTS
-```
-
-### Ubuntu / Debian
+### Environment Configuration
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - &&\
-sudo apt-get install -y nodejs
+# Create .env file
+cat > .env << EOF
+# WhatsApp Configuration
+WHATSAPP_SESSION_PATH=./sessions
+WHATSAPP_QR_TIMEOUT=60
+
+# MQTT Integration (Optional)
+MQTT_ENABLE=true
+MQTT_BROKER_URL=mqtt://mqtt-broker:1883
+MQTT_INCOMING_TOPIC=whatsapp/incoming
+MQTT_OUTGOING_TOPIC=whatsapp/outgoing
+
+# Node-RED Integration
+NODE_RED_URL=http://nodered:1880
+EOF
+
+# Run with environment file
+docker run -d --env-file .env alphabits/walink-docker:latest
 ```
 
-## Example usage
+## 🔧 Node-RED Integration
 
-```js
-const { Client } = require('whatsapp-web.js');
+### Dashboard Preview
+![Node-RED Dashboard](docs/nodered-walink-dashboard.png)
 
-const client = new Client();
+### Flow Architecture
+![Node-RED Flow](docs/nodered-walink-mqtt.png)
 
-client.on('qr', (qr) => {
-    // Generate and scan this code with your phone
-    console.log('QR RECEIVED', qr);
-});
+### Import Sample Flow
+1. Open Node-RED Editor
+2. Click **Menu → Import**
+3. Copy the flow from `docs/sample-walink-flows.json`
+4. Paste and click **Import**
+5. Deploy the flow
 
-client.on('ready', () => {
-    console.log('Client is ready!');
-});
+## 📡 MQTT Message Protocol
 
-client.on('message', msg => {
-    if (msg.body == '!ping') {
-        msg.reply('pong');
-    }
-});
-
-client.initialize();
+### Incoming Messages (WhatsApp → MQTT)
+**Topic:** `whatsapp/incoming`
+```json
+{
+  "from": "1234567890@c.us",
+  "body": "Hello World!",
+  "type": "chat",
+  "timestamp": 1634567890,
+  "senderName": "John Doe"
+}
 ```
 
-Take a look at [example.js][examples] for another examples with additional use cases.
-For further details on saving and restoring sessions, explore the provided [Authentication Strategies][auth-strategies].
+### Outgoing Messages (MQTT → WhatsApp)
+**Topic:** `whatsapp/outgoing`
+```json
+{
+  "to": "1234567890@c.us",
+  "body": "Hello from API!",
+  "type": "chat"
+}
+```
 
+## 🏗️ Architecture Overview
 
-## Supported features
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   WhatsApp Web  │    │   Walink Docker │    │    Node-RED     │
+│                 │◄──►│                 │◄──►│                 │
+│  (Browser API)  │    │   (MQTT Bridge)  │    │  (Dashboard)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                               │
+                               ▼
+                       ┌─────────────────┐
+                       │   MQTT Broker   │
+                       │                 │
+                       │  (Message Bus)  │
+                       └─────────────────┘
+```
 
-| Feature  | Status |
-| ------------- | ------------- |
-| Multi Device  | ✅  |
-| Send messages  | ✅  |
-| Receive messages  | ✅  |
-| Send media (images/audio/documents)  | ✅  |
-| Send media (video)  | ✅ [(requires Google Chrome)][google-chrome]  |
-| Send stickers | ✅ |
-| Receive media (images/audio/video/documents)  | ✅  |
-| Send contact cards | ✅ |
-| Send location | ✅ |
-| Send buttons | ❌  [(DEPRECATED)][deprecated-video] |
-| Send lists | ❌  [(DEPRECATED)][deprecated-video] |
-| Receive location | ✅ | 
-| Message replies | ✅ |
-| Join groups by invite  | ✅ |
-| Get invite for group  | ✅ |
-| Modify group info (subject, description)  | ✅  |
-| Modify group settings (send messages, edit info)  | ✅  |
-| Add group participants  | ✅  |
-| Kick group participants  | ✅  |
-| Promote/demote group participants | ✅ |
-| Mention users | ✅ |
-| Mention groups | ✅ |
-| Mute/unmute chats | ✅ |
-| Block/unblock contacts | ✅ |
-| Get contact info | ✅ |
-| Get profile pictures | ✅ |
-| Set user status message | ✅ |
-| React to messages | ✅ |
-| Create polls | ✅ |
-| Channels | ✅ |
-| Vote in polls | 🔜 |
-| Communities | 🔜 |
+## 🚀 Production Deployment
 
-Something missing? Make an issue and let us know!
+### Docker Compose
+```yaml
+version: '3.8'
+services:
+  walink:
+    image: alphabits/walink-docker:latest
+    environment:
+      - MQTT_ENABLE=true
+      - MQTT_BROKER_URL=mqtt://mqtt:1883
+    volumes:
+      - ./sessions:/app/sessions
+    depends_on:
+      - mqtt
 
-## Contributing
+  mqtt:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
 
-Feel free to open pull requests; we welcome contributions! However, for significant changes, it's best to open an issue beforehand. Make sure to review our [contribution guidelines][contributing] before creating a pull request. Before creating your own issue or pull request, always check to see if one already exists!
+  nodered:
+    image: nodered/node-red:latest
+    ports:
+      - "1880:1880"
+    volumes:
+      - ./data:/data
+```
 
-## Supporting the project
+### Kubernetes Deployment
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: walink-gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: walink
+  template:
+    metadata:
+      labels:
+        app: walink
+    spec:
+      containers:
+      - name: walink
+        image: alphabits/walink-docker:latest
+        env:
+        - name: MQTT_ENABLE
+          value: "true"
+        - name: MQTT_BROKER_URL
+          value: "mqtt://mqtt-service:1883"
+```
 
-You can support the maintainer of this project through the links below
+## 🔒 Security Best Practices
 
-- [Support via GitHub Sponsors][gitHub-sponsors]
-- [Support via PayPal][support-payPal]
-- [Sign up for DigitalOcean][digitalocean] and get $200 in credit when you sign up (Referral)
+- **Session Management**: Persistent sessions stored in volumes
+- **MQTT Authentication**: Username/password authentication
+- **Network Isolation**: Docker networks for service communication
+- **Health Checks**: Container health monitoring
+- **Resource Limits**: CPU and memory constraints
 
-## Disclaimer
+## 📊 Monitoring & Logging
 
-This project is not affiliated, associated, authorized, endorsed by, or in any way officially connected with WhatsApp or any of its subsidiaries or its affiliates. The official WhatsApp website can be found at [whatsapp.com][whatsapp]. "WhatsApp" as well as related names, marks, emblems and images are registered trademarks of their respective owners. Also it is not guaranteed you will not be blocked by using this method. WhatsApp does not allow bots or unofficial clients on their platform, so this shouldn't be considered totally safe.
+### Health Check Endpoint
+```bash
+curl http://localhost:3000/health
+```
 
-## License
+### Container Logs
+```bash
+docker logs walink-gateway -f
+```
 
-Copyright 2019 Pedro S Lopez  
+### MQTT Topics Monitoring
+```bash
+mosquitto_sub -t "whatsapp/+" -v
+```
 
-Licensed under the Apache License, Version 2.0 (the "License");  
-you may not use this project except in compliance with the License.  
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0.  
+## 🤝 Contributing
 
-Unless required by applicable law or agreed to in writing, software  
-distributed under the License is distributed on an "AS IS" BASIS,  
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  
-See the License for the specific language governing permissions and  
-limitations under the License.  
+We welcome contributions! Please see our [contribution guidelines](CONTRIBUTING.md).
 
+## 📄 License
 
-[website]: https://wwebjs.dev
-[guide]: https://guide.wwebjs.dev/guide
-[guide-source]: https://github.com/wwebjs/wwebjs.dev/tree/main
-[documentation]: https://docs.wwebjs.dev/
-[documentation-source]: https://github.com/pedroslopez/whatsapp-web.js/tree/main/docs
-[discord]: https://discord.gg/H7DqQs4
-[gitHub]: https://github.com/pedroslopez/whatsapp-web.js
-[npm]: https://npmjs.org/package/whatsapp-web.js
-[nodejs]: https://nodejs.org/en/download/
-[examples]: https://github.com/pedroslopez/whatsapp-web.js/blob/master/example.js
-[auth-strategies]: https://wwebjs.dev/guide/creating-your-bot/authentication.html
-[google-chrome]: https://wwebjs.dev/guide/creating-your-bot/handling-attachments.html#caveat-for-sending-videos-and-gifs
-[deprecated-video]: https://www.youtube.com/watch?v=hv1R1rLeVVE
-[gitHub-sponsors]: https://github.com/sponsors/pedroslopez
-[support-payPal]: https://www.paypal.me/psla/
-[digitalocean]: https://m.do.co/c/73f906a36ed4
-[contributing]: https://github.com/pedroslopez/whatsapp-web.js/blob/main/CODE_OF_CONDUCT.md
-[whatsapp]: https://whatsapp.com
->>>>>>> origin/auto-wa-web-update/patch
+This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.
+
+## 🏢 About Alpha Bits
+
+[Alpha Bits](https://alphabits.team) is a leading provider of enterprise integration solutions, specializing in IoT automation, messaging platforms, and DevOps tools.
+
+---
+
+**Built with ❤️ by [Alpha Bits](https://alphabits.team)**

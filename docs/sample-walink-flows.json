@@ -1,0 +1,372 @@
+[
+    {
+        "id": "7849cc453181ccb9",
+        "type": "tab",
+        "label": "WhatsApp Link",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "c9b6f0583f63871e",
+        "type": "group",
+        "z": "7849cc453181ccb9",
+        "name": "WhatsApp Link Status",
+        "style": {
+            "stroke": "#000000",
+            "label": true,
+            "color": "#000000",
+            "fill": "#000000",
+            "fill-opacity": "0.15"
+        },
+        "nodes": [
+            "5b3a2ccb9cc5daf9",
+            "45fbf75041a74374",
+            "6fa1ff441dd18c73",
+            "cb4c4c2501524b6c",
+            "9d0f0a6aada1f462",
+            "22d841d36eeba28f",
+            "10338e8bf2fb4c47"
+        ],
+        "x": 94,
+        "y": 169,
+        "w": 362,
+        "h": 192
+    },
+    {
+        "id": "9d0f0a6aada1f462",
+        "type": "mqtt in",
+        "z": "7849cc453181ccb9",
+        "g": "c9b6f0583f63871e",
+        "name": "",
+        "topic": "wa/001/in",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "3c3d688714302c02",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 155,
+        "y": 320,
+        "wires": [
+            [
+                "22d841d36eeba28f",
+                "cb4c4c2501524b6c"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "22d841d36eeba28f",
+        "type": "debug",
+        "z": "7849cc453181ccb9",
+        "g": "c9b6f0583f63871e",
+        "name": "DEBUG wa/001/in ",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 295,
+        "y": 320,
+        "wires": [],
+        "l": false
+    },
+    {
+        "id": "3cc20dc26a63558f",
+        "type": "aedes broker",
+        "z": "7849cc453181ccb9",
+        "name": "MQTT SERVER",
+        "mqtt_port": 1883,
+        "mqtt_ws_bind": "port",
+        "mqtt_ws_port": "",
+        "mqtt_ws_path": "",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "persistence_bind": "memory",
+        "dburl": "",
+        "usetls": false,
+        "x": 190,
+        "y": 60,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "5b3a2ccb9cc5daf9",
+        "type": "ui-text",
+        "z": "7849cc453181ccb9",
+        "g": "c9b6f0583f63871e",
+        "group": "e2b991fff941119a",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "Status",
+        "label": "Status",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "x": 415,
+        "y": 210,
+        "wires": [],
+        "l": false
+    },
+    {
+        "id": "45fbf75041a74374",
+        "type": "inject",
+        "z": "7849cc453181ccb9",
+        "g": "c9b6f0583f63871e",
+        "name": "[TEST] Inject QR",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "test",
+        "payloadType": "str",
+        "x": 155,
+        "y": 270,
+        "wires": [
+            [
+                "cb4c4c2501524b6c"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "6fa1ff441dd18c73",
+        "type": "ui-template",
+        "z": "7849cc453181ccb9",
+        "g": "c9b6f0583f63871e",
+        "group": "e2b991fff941119a",
+        "page": "",
+        "ui": "",
+        "name": "WhatsApp QR Code",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n        <img :src=\"msg.payload\" :key=\"msg.last_qr_ts\" style=\"max-width: 100%;\" v-if=\"msg.payload.startsWith('data:image/png')\">\n        <div v-else v-html=\"msg.template\"></div>\n    </div>\n</template>\n<script>\nexport default {\n    data() { return { }; },\n    mounted() { /* Handle initial load */ }\n}\n</script>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 415,
+        "y": 250,
+        "wires": [
+            []
+        ],
+        "l": false
+    },
+    {
+        "id": "cb4c4c2501524b6c",
+        "type": "function",
+        "z": "7849cc453181ccb9",
+        "g": "c9b6f0583f63871e",
+        "name": "Store the QR code",
+        "func": "const walink_key = 'walink_merchant';\n// Get Stored config if available\nlet cfg = global.get(walink_key);\nlet p = {\n    status: cfg?.status || 'scan_to_connect',\n    last_qr: cfg?.last_qr,\n    last_qr_ts: cfg?.last_qr_ts,\n    updated: Date.now(),\n    last_payload: msg.payload\n}\n\n// Parse JSON payload from Docker MQTT\nconst eventData = typeof msg.payload === 'string' ? JSON.parse(msg.payload) : msg.payload;\nconst eventType = eventData.eventType;\nconst data = eventData.data || {};\n\n// Handle Docker MQTT events\nswitch (eventType) {\n    case 'qr':\n        p.status = 'scan_to_connect';\n        if (data.qr) {\n            p.last_qr = data.qrImageURL; // Base64-Encoded Image URL\n            p.last_qr_ts = data.timestamp || Date.now();\n            node.status({fill:\"orange\",shape:\"ring\",text:\"QR Updated\"});\n        }\n        break;\n        \n    case 'authenticated':\n        p.last_qr = null;\n        p.status = 'connected';\n        node.status({fill:\"green\",shape:\"dot\",text:\"Connected\"});\n        break;\n        \n    case 'auth_failure':\n        p.last_qr = null;\n        p.status = 'auth_failed';\n        node.status({fill:\"red\",shape:\"dot\",text:\"Auth Failed\"});\n        break;\n        \n    case 'disconnected':\n        p.last_qr = null;\n        p.status = 'disconnected';\n        node.status({fill:\"red\",shape:\"dot\",text:\"Disconnected\"});\n        break;\n        \n    case 'loading_screen':\n        p.status = 'connecting';\n        const percent = data.percent || 0;\n        node.status({fill:\"yellow\",shape:\"ring\",text:`Loading ${percent}%`});\n        break;\n        \n    case 'change_state':\n        if (data.state === 'CONNECTED') {\n            p.status = 'connected';\n            p.last_qr = null;\n            node.status({fill:\"green\",shape:\"dot\",text:\"Connected\"});\n        } else if (data.state === 'CONNECTING') {\n            p.status = 'connecting';\n            node.status({fill:\"yellow\",shape:\"ring\",text:\"Connecting\"});\n        }\n        break;\n        \n    default:\n        node.warn(`Unknown event type: ${eventType}`);\n        break;\n}\n\n// Store as global\nglobal.set(walink_key, p);\n\n// Send outputs\nnode.send([{payload: p.status}, {payload: p.last_qr}]);",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 295,
+        "y": 240,
+        "wires": [
+            [
+                "5b3a2ccb9cc5daf9"
+            ],
+            [
+                "6fa1ff441dd18c73"
+            ]
+        ],
+        "icon": "font-awesome/fa-save",
+        "l": false
+    },
+    {
+        "id": "10338e8bf2fb4c47",
+        "type": "inject",
+        "z": "7849cc453181ccb9",
+        "g": "c9b6f0583f63871e",
+        "name": "[TEST] Inject Message",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "test",
+        "payloadType": "str",
+        "x": 155,
+        "y": 220,
+        "wires": [
+            [
+                "cb4c4c2501524b6c"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "3c3d688714302c02",
+        "type": "mqtt-broker",
+        "name": "Localhost",
+        "broker": "127.0.0.1",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "e2b991fff941119a",
+        "type": "ui-group",
+        "name": "WhatsApp Link",
+        "page": "386b2a9e69ca6852",
+        "width": 6,
+        "height": 1,
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "386b2a9e69ca6852",
+        "type": "ui-page",
+        "name": "General",
+        "ui": "31652dbf92ddb8cd",
+        "path": "/overview",
+        "icon": "comment",
+        "layout": "grid",
+        "theme": "11c5038eb5334d7d",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "31652dbf92ddb8cd",
+        "type": "ui-base",
+        "name": "Konductor.AI",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control",
+            "ui-button",
+            "ui-slider",
+            "ui-text",
+            "ui-table",
+            "ui-form",
+            "ui-text-input",
+            "ui-number-input",
+            "ui-file-input",
+            "ui-template"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "icon",
+        "titleBarStyle": "fixed",
+        "showReconnectNotification": false,
+        "notificationDisplayTime": 5,
+        "showDisconnectNotification": false,
+        "allowInstall": false
+    },
+    {
+        "id": "11c5038eb5334d7d",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "ec0583fe19ebb6e1",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-contrib-aedes": "0.15.0",
+            "@flowfuse/node-red-dashboard": "1.26.0"
+        }
+    }
+]
