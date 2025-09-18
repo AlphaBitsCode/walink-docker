@@ -1,7 +1,7 @@
 <div align="center">
     <br />
     <p>
-        <a href="https://alphabits.team"><img src="https://alphabits.team/logos/logo_header.png" title="Alpha Bits" alt="Alpha Bits Logo" width="300" /></a>
+        <a href="https://alphabits.team?utm_source=github&utm_medium=1&utm_campaign=walink-docker"><img src="https://alphabits.team/logos/logo_header.png" title="Alpha Bits" alt="Alpha Bits Logo" width="300" /></a>
     </p>
     <br />
     <h1>🚀 WhatsApp Link - Docker Edition</h1>
@@ -199,8 +199,8 @@ This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) fo
 
 ## 🏢 About Alpha Bits
 
-[Alpha Bits](https://alphabits.team) is a leading provider of enterprise integration solutions, specializing in IoT automation, messaging platforms, and DevOps tools.
+[Alpha Bits](https://alphabits.team?utm_source=github&utm_medium=1&utm_campaign=walink-docker) is a leading provider of enterprise integration solutions, specializing in IoT automation, messaging platforms, and DevOps tools.
 
 ---
 
-**Built for Devs by Devs 🧑🏻‍💻 [Alpha Bits](https://alphabits.team)**
+**Built for Devs by Devs 🧑🏻‍💻 [Alpha Bits](https://alphabits.team?utm_source=github&utm_medium=1&utm_campaign=walink-docker)**
