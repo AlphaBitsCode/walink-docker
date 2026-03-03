@@ -178,7 +178,10 @@ const clientConfig = {
             '--disable-gpu',
             '--disable-background-timer-throttling',
             '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding'
+            '--disable-renderer-backgrounding',
+            '--disable-features=IsolateOrigins,site-per-process',
+            '--disable-site-isolation-trials',
+            '--disable-ipc-flooding-protection'
         ],
     },
     // pairWithPhoneNumber: {

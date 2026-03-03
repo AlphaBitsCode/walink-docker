@@ -23,21 +23,34 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install app dependencies
-RUN npm ci --omit=dev --legacy-peer-deps && npm cache clean --force
+RUN npm install --legacy-peer-deps && npm cache clean --force
 
 # Copy app source code
 COPY . .
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Install su-exec for privilege dropping
+RUN apk add --no-cache su-exec
 
 # Create a non-privileged user that the app will run under
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S whatsapp -u 1001 -G nodejs
 
+# Create auth and cache directories
+RUN mkdir -p /usr/src/app/.wwebjs_auth /usr/src/app/.wwebjs_cache && \
+    chown -R whatsapp:nodejs /usr/src/app/.wwebjs_auth /usr/src/app/.wwebjs_cache
+
 # Change ownership of the app directory to the nodejs user
 RUN chown -R whatsapp:nodejs /usr/src/app
-USER whatsapp
 
 # Expose port (if needed for web interface)
 EXPOSE 3000
+
+# Set entrypoint
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
