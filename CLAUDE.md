@@ -57,7 +57,7 @@ This is a Dockerized version of the WhatsApp Web.js library - a Node.js library 
 5. Event listeners handle real-time message updates
 
 ### Key Constants
-- WhatsApp Web version: `2.3000.1026927524`
+- WhatsApp Web version: `2.3000.1034282225`
 - Default viewport: null (full browser size)
 - User agent configured to mimic Chrome on macOS
 - Authentication timeout and retry settings configurable

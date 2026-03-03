@@ -11,7 +11,7 @@
     <br />
     <p>
         <a href="https://hub.docker.com/r/Konductor-AI/walink-docker"><img src="https://img.shields.io/docker/v/Konductor-AI/walink-docker?sort=semver" alt="Docker Version"></a>
-        <img src="https://img.shields.io/badge/WhatsApp_Web-2.3000.1026927524-brightgreen.svg" alt="WhatsApp Version">
+        <img src="https://img.shields.io/badge/WhatsApp_Web.js-v1.34.6-brightgreen.svg" alt="WhatsApp Web.js Version">
         <a href="https://github.com/Konductor-AI/walink-docker"><img src="https://img.shields.io/github/stars/Konductor-AI/walink-docker?style=social" alt="GitHub Stars"></a>
     </p>
     <br />
