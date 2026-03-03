@@ -6,7 +6,8 @@
     <br />
     <h1>🚀 WhatsApp Link - Docker Edition</h1>
     <p>
-        <i>Enterprise-Grade WhatsApp API Gateway by <strong>Alpha Bits</strong></i>
+        <i>Enterprise-Grade WhatsApp API Gateway by <strong>Alpha Bits</strong></i><br />
+        <i>Based on <a href="https://github.com/pedroslopez/whatsapp-web.js">whatsapp-web.js</a> v1.34.6</i>
     </p>
     <br />
     <p>
@@ -31,27 +32,30 @@ docker run -d \
   alphabits/walink-docker:latest
 ```
 
+### Local Development
+```bash
+npm install --legacy-peer-deps
+cp .env.example .env   # Edit with your config
+node main.js           # QR code will appear in terminal
+```
+
 ### Environment Configuration
 ```bash
-# Create .env file
-cat > .env << EOF
-# WhatsApp Configuration
-WHATSAPP_SESSION_PATH=./sessions
-WHATSAPP_QR_TIMEOUT=60
-
-# MQTT Integration (Optional)
-MQTT_ENABLE=true
-MQTT_BROKER_URL=mqtt://mqtt-broker:1883
-MQTT_INCOMING_TOPIC=whatsapp/incoming
-MQTT_OUTGOING_TOPIC=whatsapp/outgoing
-
-# Node-RED Integration
-NODE_RED_URL=http://nodered:1880
-EOF
-
-# Run with environment file
-docker run -d --env-file .env alphabits/walink-docker:latest
+# Copy and edit the example env file
+cp .env.example .env
 ```
+
+| Variable | Description | Default |
+|---|---|---|
+| `DEVICE_NAME` | Custom name in WA linked devices | _(WA default)_ |
+| `BROWSER_NAME` | Browser icon: Chrome, Firefox, Safari, Edge | _(gray icon)_ |
+| `MQTT_ENABLE` | Enable MQTT bridge | `true` |
+| `MQTT_BROKER_URL` | MQTT broker URL | `mqtt://localhost:1883` |
+| `MQTT_USERNAME` | MQTT auth username | |
+| `MQTT_PASSWORD` | MQTT auth password | |
+| `MQTT_CLIENT_ID` | Unique MQTT client ID | `walink-client-12345` |
+| `MQTT_INCOMING_TOPIC` | WA→MQTT messages | `walink/incoming` |
+| `MQTT_OUTGOING_TOPIC` | MQTT→WA messages | `walink/outgoing` |
 
 ## 🔧 Node-RED Integration
 
@@ -113,30 +117,34 @@ docker run -d --env-file .env alphabits/walink-docker:latest
 
 ### Docker Compose
 ```yaml
-version: '3.8'
 services:
   walink:
-    image: alphabits/walink-docker:latest
+    image: kent000/whatsapp-mqtt:latest
+    container_name: walink-docker-001
+    deploy:
+      resources:
+        limits:
+          memory: "1024m"
     environment:
-      - MQTT_ENABLE=true
-      - MQTT_BROKER_URL=mqtt://mqtt:1883
+      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+      PUPPETEER_EXECUTABLE_PATH: "/usr/bin/chromium-browser"
+      MQTT_ENABLE: "true"
+      MQTT_BROKER_URL: "mqtt://your-broker:1883"
+      MQTT_USERNAME: "walink"
+      MQTT_PASSWORD: "your-password"
+      MQTT_CLIENT_ID: "walink-docker-001"
+      MQTT_INCOMING_TOPIC: "wa/001/in"
+      MQTT_OUTGOING_TOPIC: "wa/001/out"
     volumes:
-      - ./sessions:/app/sessions
-    depends_on:
-      - mqtt
-
-  mqtt:
-    image: eclipse-mosquitto:2
-    ports:
-      - "1883:1883"
-
-  nodered:
-    image: nodered/node-red:latest
-    ports:
-      - "1880:1880"
-    volumes:
-      - ./data:/data
+      - ./data/auth:/usr/src/app/.wwebjs_auth
+      - ./data/cache:/usr/src/app/.wwebjs_cache
+    security_opt:
+      - seccomp:unconfined
+    shm_size: 2gb
+    restart: unless-stopped
 ```
+
+> **Note:** `shm_size: 2gb` and `seccomp:unconfined` are required for Chromium stability in Docker.
 
 ### Kubernetes Deployment
 ```yaml
